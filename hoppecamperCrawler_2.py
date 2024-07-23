@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import configparser
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -52,7 +54,7 @@ def parse_ads(soup):
         url = f"https://www.kleinanzeigen.de{url_element['href']}" if url_element else 'N/A'
 
         ads.append({
-            'Fahrzeug': title,  # 'Title' zu 'Fahrzeug' geändert
+            'Fahrzeug': title,
             'Price': price,
             'Location': location,
             'URL': url
@@ -72,7 +74,7 @@ def get_ad_details(driver, url):
         title = title_element.text.strip() if title_element else 'N/A'
 
         # "Reserviert" und "Gelöscht" aus dem Titel entfernen
-        title = title.replace("Reserviert • ", "").replace("Gelöscht • ", "")
+        title = title.replace("Reserviert – ", "").replace("Gelöscht – ", "")
 
         price_element = soup.find('h2', id='viewad-price')
         price = price_element.text.strip() if price_element else 'N/A'
@@ -97,8 +99,8 @@ def get_ad_details(driver, url):
 
         # Datenwörterbuch für CSV-Zeile vorbereiten
         ad_details = {
-            'title': adid,  # 'adid' zu 'title' geändert
-            'Fahrzeug': title,  # 'title' zu 'Fahrzeug' geändert
+            'title': adid,
+            'Fahrzeug': title,
             'description': description,
             'price': price,
             'location': location,
@@ -164,7 +166,6 @@ def navigate_to_next_page(driver, current_page):
         logging.error(f"Fehler beim Navigieren zur nächsten Seite: {e}")
         return False
 
-
 def main():
     config = load_config()
     base_url = config.get('base_url')
@@ -213,7 +214,7 @@ def main():
     save_to_csv(detailed_ads)
     logging.info(
         f"Scraping abgeschlossen. {len(detailed_ads)} Anzeigen in CSV gespeichert.")
-
+    print("Das Skript wurde erfolgreich ausgeführt.")
 
 if __name__ == '__main__':
     main()
