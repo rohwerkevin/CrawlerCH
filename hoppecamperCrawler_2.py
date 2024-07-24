@@ -1,18 +1,49 @@
 # -*- coding: utf-8 -*-
 
 import configparser
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-import pandas as pd
-import time
-from bs4 import BeautifulSoup
-import re
-import logging
+import subprocess
+import sys
+import os
+
+# Bibliotheken installieren, falls nicht vorhanden
+
+
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+
+try:
+    import selenium
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from webdriver_manager.chrome import ChromeDriverManager
+    import pandas as pd
+    import time
+    from bs4 import BeautifulSoup
+    import re
+    import logging
+except ImportError:
+    install("selenium")
+    install("pandas")
+    install("webdriver_manager")
+    install("beautifulsoup4")
+    import selenium
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from webdriver_manager.chrome import ChromeDriverManager
+    import pandas as pd
+    import time
+    from bs4 import BeautifulSoup
+    import re
+    import logging
 
 # Logging einrichten
 logging.basicConfig(level=logging.INFO,
@@ -38,6 +69,10 @@ def parse_ads(soup):
     for ad in ad_list:
         title_element = ad.find('div', class_='Title Title-h3')
         title = title_element.text.strip() if title_element else 'N/A'
+
+        # "Reserviert" und "Gelöscht" aus dem Titel entfernen
+        title = re.sub(r"Reserviert.*?•", "", title).strip()
+        title = re.sub(r"Gelöscht.*?•", "", title).strip()
 
         price_element = ad.find('p', class_='aditem-main--middle--price')
         price_text = price_element.text.strip() if price_element else 'N/A'
@@ -74,7 +109,8 @@ def get_ad_details(driver, url):
         title = title_element.text.strip() if title_element else 'N/A'
 
         # "Reserviert" und "Gelöscht" aus dem Titel entfernen
-        title = title.replace("Reserviert – ", "").replace("Gelöscht – ", "")
+        title = re.sub(r"Reserviert.*?•", "", title).strip()
+        title = re.sub(r"Gelöscht.*?•", "", title).strip()
 
         price_element = soup.find('h2', id='viewad-price')
         price = price_element.text.strip() if price_element else 'N/A'
@@ -166,6 +202,7 @@ def navigate_to_next_page(driver, current_page):
         logging.error(f"Fehler beim Navigieren zur nächsten Seite: {e}")
         return False
 
+
 def main():
     config = load_config()
     base_url = config.get('base_url')
@@ -215,6 +252,7 @@ def main():
     logging.info(
         f"Scraping abgeschlossen. {len(detailed_ads)} Anzeigen in CSV gespeichert.")
     print("Das Skript wurde erfolgreich ausgeführt.")
+
 
 if __name__ == '__main__':
     main()
