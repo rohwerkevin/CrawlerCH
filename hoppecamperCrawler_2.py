@@ -217,9 +217,27 @@ def main():
     ads = []
 
     options = Options()
-    options.headless = True
+    # options.headless = True  # Deaktiviere den Headless-Modus für Debugging
+
+    # Installiere ChromeDriver und erhalte den Pfad
+    driver_path = ChromeDriverManager().install()
+    print(f"Installierter ChromeDriver-Pfad: {driver_path}")
+
+    # Überprüfe, ob der Pfad korrekt ist
+    if 'THIRD_PARTY_NOTICES.chromedriver' in driver_path or not driver_path.endswith('chromedriver'):
+        # Hole das Verzeichnis der installierten Dateien
+        driver_dir = os.path.dirname(driver_path)
+        # Definiere den korrekten Pfad zur ausführbaren Datei
+        correct_driver_path = os.path.join(driver_dir, 'chromedriver')
+        print(f"Korrigierter ChromeDriver-Pfad: {correct_driver_path}")
+    else:
+        correct_driver_path = driver_path
+
+    # Stelle sicher, dass die ausführbare Datei die richtigen Berechtigungen hat
+    os.chmod(correct_driver_path, 0o755)
+
     driver = webdriver.Chrome(service=Service(
-        ChromeDriverManager().install()), options=options)
+        correct_driver_path), options=options)
 
     try:
         driver.get(base_url)
