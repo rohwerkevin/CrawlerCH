@@ -6,11 +6,8 @@ import sys
 import os
 
 # Bibliotheken installieren, falls nicht vorhanden
-
-
 def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
 
 try:
     import selenium
@@ -52,7 +49,13 @@ logging.basicConfig(level=logging.INFO,
 
 def load_config():
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, 'config.ini')
+
+    read_files = config.read(config_path)
+    if not read_files:  # Wenn leer, dann konnte die Datei nicht gelesen werden
+        raise FileNotFoundError(f"config.ini nicht gefunden unter: {config_path}")
+
     return config['Settings']
 
 
@@ -144,8 +147,8 @@ def get_ad_details(driver, url):
             'image_url': image_urls[0] if image_urls else 'N/A',
             'image_alt': title
         }
-        for i, url in enumerate(image_urls):
-            ad_details[f'image_url_{i+1}'] = url
+        for i, img_url in enumerate(image_urls):
+            ad_details[f'image_url_{i+1}'] = img_url
 
         for i, detail in enumerate(details):
             ad_details[f'detail{i+1}'] = detail
@@ -217,27 +220,19 @@ def main():
     ads = []
 
     options = Options()
-    # options.headless = True  # Deaktiviere den Headless-Modus für Debugging
+    # options.headless = True  # Für Debugging deaktiviert, nach Bedarf aktivieren
 
     # Installiere ChromeDriver und erhalte den Pfad
     driver_path = ChromeDriverManager().install()
     print(f"Installierter ChromeDriver-Pfad: {driver_path}")
 
-    # Überprüfe, ob der Pfad korrekt ist
-    if 'THIRD_PARTY_NOTICES.chromedriver' in driver_path or not driver_path.endswith('chromedriver'):
-        # Hole das Verzeichnis der installierten Dateien
-        driver_dir = os.path.dirname(driver_path)
-        # Definiere den korrekten Pfad zur ausführbaren Datei
-        correct_driver_path = os.path.join(driver_dir, 'chromedriver')
-        print(f"Korrigierter ChromeDriver-Pfad: {correct_driver_path}")
-    else:
-        correct_driver_path = driver_path
+    # Für Windows wird meist der Pfad mit .exe geliefert
+    correct_driver_path = driver_path
 
-    # Stelle sicher, dass die ausführbare Datei die richtigen Berechtigungen hat
-    os.chmod(correct_driver_path, 0o755)
+    # if os.name != 'nt':  # 'nt' = Windows
+    #     os.chmod(correct_driver_path, 0o755)
 
-    driver = webdriver.Chrome(service=Service(
-        correct_driver_path), options=options)
+    driver = webdriver.Chrome(service=Service(correct_driver_path), options=options)
 
     try:
         driver.get(base_url)
@@ -251,7 +246,7 @@ def main():
 
             if current_page < page_end:
                 if not navigate_to_next_page(driver, current_page):
-                    break  # Abbrechen, wenn kein Weiter-Button vorhanden ist oder die Navigation fehlschlägt
+                    break  # Abbrechen, wenn kein Weiter-Button vorhanden ist oder Navigation fehlschlägt
 
             current_page += 1
 
